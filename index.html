@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>🎂 Blow the Candles — Happy Birthday Nabia</title>
+<style>
+  :root{--bg1:#ffecd2;--bg2:#fcb69f;--accent:#ff2d7a}
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:linear-gradient(160deg,var(--bg1),var(--bg2));overflow:hidden}
+  .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px;box-sizing:border-box}
+  .card{width:100%;max-width:880px;background:rgba(255,255,255,0.94);border-radius:18px;box-shadow:0 12px 36px rgba(0,0,0,0.12);padding:26px;position:relative;overflow:hidden;text-align:center}
+  h1{margin:6px 0 6px;font-size:1.9rem;color:#2b2b2b}
+  p.lead{margin:6px 0 18px;color:#444;font-size:1rem}
+  .cake{width:340px;height:240px;position:relative;display:flex;align-items:center;justify-content:center;flex-direction:column;margin:0 auto}
+  .plate{width:380px;height:18px;background:#fff;border-radius:50%;box-shadow:inset 0 -8px 20px rgba(0,0,0,0.06);position:relative;top:26px}
+  .tier{width:300px;height:140px;background:linear-gradient(180deg,#fff,#fff9f5);border-radius:14px;position:relative;z-index:2;box-shadow:0 10px 22px rgba(0,0,0,0.06)}
+  .icing{position:absolute;top:-6px;left:14px;right:14px;height:40px;background:linear-gradient(90deg,#ffd0ea,#ffb3d5);border-radius:18px 18px 12px 12px;box-shadow:inset 0 -6px rgba(255,255,255,0.25)}
+  .candles{position:absolute;top:-30px;display:flex;gap:14px;transform:translateY(-8px)}
+  .candle{width:12px;height:56px;background:#fff;border-radius:6px;position:relative;display:flex;align-items:flex-start;justify-content:center;overflow:visible}
+  .wax{width:100%;height:52%;background:linear-gradient(#ffdede,#ff9aa8);border-top-left-radius:3px;border-top-right-radius:3px}
+  .flame{width:14px;height:18px;background:radial-gradient(circle at 35% 30%, #fff 0 6px, transparent 7px),linear-gradient(#ffec7a,#ff7b2e);border-radius:50% 50% 40% 40%;position:relative;margin-top:-10px;box-shadow:0 6px 14px rgba(255,120,40,0.3);transform-origin:center bottom;animation:flicker 900ms infinite}
+  .flame small{position:absolute;left:50%;top:50%;transform:translate(-50%,-40%);width:6px;height:6px;border-radius:50%;background:#fff;opacity:0.95}
+  @keyframes flicker{0%{transform:scale(1) translateY(0)}50%{transform:scale(0.92) translateY(-2px)}100%{transform:scale(1) translateY(0)}}
+  .flame.out{opacity:0;transform:scale(0.2);transition:all 700ms ease-out}
+  .controls{display:flex;gap:12px;justify-content:center;margin-top:18px}
+  button{background:var(--accent);color:#fff;border:none;padding:12px 18px;border-radius:999px;font-weight:700;cursor:pointer;font-size:1rem;box-shadow:0 10px 22px rgba(255,45,122,0.12)}
+  button.secondary{background:#fff;color:var(--accent);border:1px solid rgba(0,0,0,0.06)}
+  #confettiCanvas{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:15}
+  .status{margin-top:12px;color:#333;font-weight:600}
+  .mic-ind{display:inline-block;margin-top:8px;padding:8px 12px;background:#fff;border-radius:999px;border:1px dashed rgba(0,0,0,0.06);color:#444}
+  .finalText{display:none;margin-top:18px;font-size:1.4rem;font-weight:800;color:var(--accent);text-shadow:0 10px 30px rgba(255,59,138,0.12);animation:pop 700ms ease both}
+  @keyframes pop{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}
+  @media(max-width:480px){.cake{width:260px;height:200px}.plate{width:300px}}
+</style>
+</head>
+<body>
+  <canvas id="confettiCanvas"></canvas>
+  <div class="wrap">
+    <div class="card" role="main" aria-live="polite">
+      <h1>🎂 Blow the Candles — Nabia Meri Jaan</h1>
+      <p class="lead">Press <strong>Start</strong>, allow microphone, then gently blow into your phone. Candles will go out and a surprise will play. (If you deny mic, a fallback button appears.)</p>
+
+      <div class="cake" aria-hidden="true">
+        <div class="candles" id="candlesHolder"></div>
+        <div class="tier">
+          <div class="icing"></div>
+          <div style="position:absolute;bottom:18px;color:#8b3a5a;font-weight:700">Nabia Meri Jaan</div>
+        </div>
+        <div class="plate"></div>
+      </div>
+
+      <div class="controls">
+        <button id="startBtn">Start (Allow Mic)</button>
+        <button class="secondary" id="fallbackBtn" style="display:none">Tap to Blow (no mic)</button>
+      </div>
+
+      <div class="status" id="status">Status: Waiting</div>
+      <div class="mic-ind" id="micLevel">Mic: —</div>
+      <div class="finalText" id="finalText">🎉 Love you Nabia — Happy Birthday! 💖</div>
+    </div>
+  </div>
+
+  <!-- music: Pixabay royalty-free; replace with aud.mp3 if you upload -->
+  <audio id="bgMusic" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_2ce6c42e2f.mp3?filename=happy-birthday-to-you-20561.mp3" preload="auto"></audio>
+
+<script>
+/* Full mic-powered version
+   - Paste as index.html
+   - Works on HTTPS (Netlify/GitHub Pages with HTTPS)
+   - Music plays only after candles extinguish (user gesture occurred)
+*/
+
+const candlesHolder = document.getElementById('candlesHolder');
+const startBtn = document.getElementById('startBtn');
+const fallbackBtn = document.getElementById('fallbackBtn');
+const status = document.getElementById('status');
+const micLevel = document.getElementById('micLevel');
+const finalText = document.getElementById('finalText');
+const confettiCanvas = document.getElementById('confettiCanvas');
+const bgMusic = document.getElementById('bgMusic');
+
+let audioCtx, analyser, dataArray, source, mediaStream;
+let detectInterval, spikeCount = 0, extinguished = false;
+const THRESHOLD = 0.06; // sensitivity: lower = easier to trigger (tweak if needed)
+const REQUIRED_SPIKES = 2; // how many blow spikes required
+
+// create candles visually
+function makeCandles(n=5){
+  candlesHolder.innerHTML = '';
+  for(let i=0;i<n;i++){
+    const c = document.createElement('div'); c.className='candle';
+    c.innerHTML = '<div class="wax"></div><div class="flame"><small></small></div>';
+    candlesHolder.appendChild(c);
+  }
+  candlesHolder.style.gap='12px';
+}
+makeCandles(5);
+
+// confetti particles
+function launchConfetti(){
+  const canvas = confettiCanvas;
+  const ctx = canvas.getContext('2d');
+  function resize(){ canvas.width = canvas.clientWidth * devicePixelRatio; canvas.height = canvas.clientHeight * devicePixelRatio; ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);}
+  resize(); window.addEventListener('resize', resize);
+  const pieces = [];
+  for(let i=0;i<180;i++){
+    pieces.push({
+      x: Math.random()*canvas.clientWidth,
+      y: -Math.random()*200,
+      r: Math.random()*8+3,
+      vx: (Math.random()-0.5)*6,
+      vy: Math.random()*4+2,
+      color: `hsl(${Math.random()*360},70%,60%)`
+    });
+  }
+  function draw(){
+    ctx.clearRect(0,0,canvas.clientWidth,canvas.clientHeight);
+    for(const p of pieces){
+      p.x += p.vx; p.y += p.vy; p.vy += 0.02;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.ellipse(p.x,p.y,p.r,p.r*0.7,0,0,Math.PI*2);
+      ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+// extinguish animation and final actions
+function extinguishCandles(){
+  if(extinguished) return;
+  extinguished = true;
+  document.querySelectorAll('.flame').forEach((f, idx)=>{
+    setTimeout(()=> f.classList.add('out'), idx*110);
+  });
+  status.textContent = 'Candles blown out! 🎉';
+  // start confetti + music + show message
+  setTimeout(()=> {
+    try{ bgMusic.currentTime = 0; bgMusic.play().catch(()=>{}); } catch(e){}
+    launchConfetti();
+    finalText.style.display = 'block';
+  }, 850);
+  // stop mic sampling
+  stopDetection();
+}
+
+// start microphone detection
+async function startMicDetection(){
+  try{
+    status.textContent = 'Requesting microphone...';
+    // get microphone
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    source = audioCtx.createMediaStreamSource(mediaStream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 2048;
+    source.connect(analyser);
+    const bufferLength = analyser.fftSize;
+    dataArray = new Float32Array(bufferLength);
+
+    status.textContent = 'Blow into the mic gently to extinguish the candles.';
+    micLevel.textContent = 'Mic: active';
+    spikeCount = 0; extinguished = false; finalText.style.display='none';
+    fallbackBtn.style.display = 'none';
+    startBtn.disabled = true; startBtn.textContent = 'Listening...';
+
+    let lastRMS = 0;
+    detectInterval = setInterval(()=>{
+      analyser.getFloatTimeDomainData(dataArray);
+      // compute RMS
+      let sum = 0;
+      for(let i=0;i<dataArray.length;i++){ const v=dataArray[i]; sum += v*v; }
+      const rms = Math.sqrt(sum / dataArray.length);
+      micLevel.textContent = `Mic RMS: ${rms.toFixed(3)}`;
+
+      // detect spike (rapid increase)
+      if(rms > THRESHOLD && (rms - lastRMS) > 0.015){
+        spikeCount++;
+        status.textContent = `Detected blow ${spikeCount}/${REQUIRED_SPIKES} — keep going!`;
+      }
+      if(spikeCount >= REQUIRED_SPIKES && !extinguished){
+        extinguishCandles();
+      }
+      lastRMS = rms;
+    }, 110);
+
+  }catch(err){
+    console.error('Mic error', err);
+    status.textContent = 'Microphone not available or blocked. Use fallback button below.';
+    micLevel.textContent = 'Mic: blocked';
+    startBtn.disabled = false; startBtn.textContent = 'Start (Allow Mic)';
+    fallbackBtn.style.display = 'inline-block';
+  }
+}
+
+// stop detection & cleanup
+function stopDetection(){
+  try{ clearInterval(detectInterval); }catch(e){}
+  try{ if(mediaStream) mediaStream.getTracks().forEach(t=>t.stop()); }catch(e){}
+  try{ if(audioCtx && audioCtx.state !== 'closed') audioCtx.close(); }catch(e){}
+  micLevel.textContent = 'Mic: stopped';
+}
+
+// fallback tap action (when mic denied)
+function fallbackBlow(){
+  // small visual "blow" simulation
+  status.textContent = 'Fallback: blowing...';
+  extinguishCandles();
+}
+
+// UI events
+startBtn.addEventListener('click', ()=> {
+  startBtn.disabled = true;
+  startBtn.textContent = 'Allowing mic...';
+  setTimeout(()=> startMicDetection(), 300);
+});
+
+fallbackBtn.addEventListener('click', ()=> {
+  fallbackBlow();
+});
+
+// keyboard shortcut (for testing): press B to blow
+document.addEventListener('keydown', e=>{
+  if(e.key.toLowerCase()==='b' && !extinguished) extinguishCandles();
+});
+
+// allow retry by reloading page (or you can add a visible reset button if you want)
+</script>
+</body>
+</html>
